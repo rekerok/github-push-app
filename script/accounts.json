@@ -1,0 +1,20 @@
+{
+  "token": "token",
+  "name": "logib",
+  "repositories": [
+    {
+      "name 1": [
+        {
+          "atWork": true,
+          "files": [
+            {
+              "file 1": true,
+              "file 2": false
+            }
+          ],
+          "last edit" : "12-12-2021"
+        }
+      ]
+    }
+  ]
+}

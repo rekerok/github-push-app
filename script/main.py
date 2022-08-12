@@ -14,7 +14,10 @@ def main():
     for token in arrToken:
         g = github.Github(token)
         user = g.get_user()
-        print(user.name)
+        print(f"\t{user.login}")
+        repos = user.get_repos()
+        for repo in repos:
+            print(f"\t\t{repo.name}")
 
 
 if __name__ == "__main__":
