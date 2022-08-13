@@ -1,9 +1,8 @@
 import github
-
+import os
 
 def main():
     print("def main")
-    import os
     print(os.listdir())
     arrToken = list()
     with open("script/accessTokens.txt", "r") as file:
