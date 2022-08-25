@@ -1,6 +1,9 @@
 import faker
 import github
-import os
+import github.GithubException
+import github.Authorization
+import github.AuthenticatedUser
+
 
 def updateSeveralFiles(repo, commit_message, file_list):
     fake = faker.Faker()
@@ -20,21 +23,7 @@ def updateSeveralFiles(repo, commit_message, file_list):
 
 
 def main():
-    print("def main")
-    print(os.listdir())
-    arrToken = list()
-    with open("script/accessTokens.txt", "r") as file:
-        for line in file.readlines():
-            arrToken.append(line)
-
-    arrToken = list(map(lambda x: x.strip('\n'), arrToken))
-    for token in arrToken:
-        g = github.Github(token)
-        user = g.get_user()
-        print(f"\t{user.login}")
-        repos = user.get_repos()
-        for repo in repos:
-            print(f"\t\t{repo.name}")
+    print(__name__)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ fake = faker.Faker()
 
 def osateam():
     token = ""
-    g = github.Github(token)
+    g = github.Github("")
     repo = g.get_user().get_repo("osateam-private-repo")
     print(fake.name())
     content = repo.get_contents("qwer.txt")
@@ -17,7 +17,7 @@ def osateam():
 
 def pump():
     token = ""  #
-    g = github.Github(token)
+    g = github.Github("")
     repo = g.get_user().get_repo("pumperinho-private-repo")
     print(fake.name())
     content = repo.get_contents("qwer.txt")
@@ -28,7 +28,7 @@ def pump():
 
 def egorivanovtest():
     token = ""
-    g = github.Github(token)
+    g = github.Github("")
     repo = g.get_user().get_repo("egorivanovtest-private-repo")
     print(fake.name())
     content = repo.get_contents("qwer.txt")
@@ -38,9 +38,10 @@ def egorivanovtest():
 
 
 def main():
-    osateam()
-    pump()
-    egorivanovtest()
+    pass
+    # osateam()
+    # pump()
+    # egorivanovtest()
 
 
 if __name__ == "__main__":
