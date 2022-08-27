@@ -9,10 +9,9 @@ def searcFilesInDirectory(repo, path=""):
         contents = repo.get_contents(path)
     except github.GithubException:
         return []
-    print(repo.fork)
     for file_contenet in contents:
         if file_contenet.type == "dir":
-            list_content.extend(searcFilesInDirectory())
+            list_content.extend(searcFilesInDirectory(repo, file_contenet.path))
         else:
             list_content.append(file_contenet.path)
     return list_content
@@ -21,10 +20,13 @@ def searcFilesInDirectory(repo, path=""):
 def makeDictionaryRepo(repos):
     repos_dict = {}
     for repo in repos:
-        repos_dict[repo.name] = {
-            "use": "Input True or False",
-            "files": [] if repo.fork else searcFilesInDirectory(repo)
-        }
+        if repo.fork:
+            continue
+        else:
+            repos_dict[repo.name] = {
+                "use": "Input True or False",
+                "files": searcFilesInDirectory(repo)
+            }
     return repos_dict
 
 
