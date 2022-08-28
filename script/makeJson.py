@@ -4,16 +4,16 @@ import github
 
 # Repository = Directory
 def searcFilesInDirectory(repo, path=""):
-    list_content = list()
+    list_content = dict()
     try:
         contents = repo.get_contents(path)
     except github.GithubException:
         return []
     for file_contenet in contents:
         if file_contenet.type == "dir":
-            list_content.extend(searcFilesInDirectory(repo, file_contenet.path))
+            list_content.update(searcFilesInDirectory(repo, file_contenet.path))
         else:
-            list_content.append(file_contenet.path)
+            list_content[file_contenet.path] = "false"
     return list_content
 
 
@@ -24,7 +24,7 @@ def makeDictionaryRepo(repos):
             continue
         else:
             repos_dict[repo.name] = {
-                "use": "Input True or False",
+                "use": "Input true or false",
                 "files": searcFilesInDirectory(repo)
             }
     return repos_dict
