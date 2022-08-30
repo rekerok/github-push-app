@@ -1,8 +1,6 @@
 import faker
 import github
 import github.GithubException
-import github.Authorization
-import github.AuthenticatedUser
 
 
 def updateSeveralFiles(repo, commit_message, file_list):
@@ -23,8 +21,7 @@ def updateSeveralFiles(repo, commit_message, file_list):
 
 
 def main():
-    print(__name__)
-
+    pass
 
 if __name__ == "__main__":
     main()

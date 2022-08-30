@@ -40,7 +40,7 @@ def readTokensFile():
         try:
             config_dict[value] = {
                 "username": user.login,
-                "use": True,
+                "use": True if 5 < 3 else False,
                 "url": user.html_url,
                 "repositories": makeDictionaryRepo(user.get_repos())
             }
