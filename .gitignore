@@ -2,3 +2,6 @@
 /templates
 .DS_Store
 /env
+private_token.txt
+/code
+/account
