@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any, Dict
 
+import colorama
 import github
 from github import BadCredentialsException
 from github import UnknownObjectException
@@ -9,7 +10,7 @@ from github import UnknownObjectException
 PATH_PRIVATE_TOKENS = "./private_token.txt"
 PATH_FOLDER_ACCOUNTS = "./account/"
 PATH_FOLDER_CODE_STORAGE = "./code"
-
+colorama.init(autoreset=True)
 
 def get_list_files_accounts():
     return list(map(lambda x: PATH_FOLDER_ACCOUNTS + x, [file for file in os.listdir(PATH_FOLDER_ACCOUNTS)]))
@@ -83,40 +84,41 @@ def connecting_to_file(repo, file_path):
         return None
 
 
-def push(repo, file_path, commit_message, code_for_commit, file_sha):
-    pass
+def push_in_repo(repo, file, code_from_file):
+    content_file = connecting_to_file(repo, file)
+    if content_file:
+        text_for_push = content_file.decoded_content.decode() + code_from_file
+        commit_for_push = f"update file {file}"
+        file_sha = content_file.sha
+        repo.update_file(path=file, message=commit_for_push, content=text_for_push, sha=file_sha)
+        print(f"Файл {file} запушился {colorama.Fore.GREEN}УСПЕШНО")
+    else:
+        text_for_push = code_from_file
+        commit_for_push = f"create file {file}"
+        repo.create_file(path=file, message=commit_for_push, content=text_for_push)
+        print(f"Файл {file} создался и запушился {colorama.Fore.GREEN}УСПЕШНО")
 
 
 def preparing_for_a_commit(acc_dict: Dict):
     acc = connecting_to_account(acc_dict['token'])
     if not acc:
         return False
-    user = acc.get_user()
     for repo_link in acc_dict['repos']:
         repo = acc.get_repo(get_repo_name_from_link(repo_link['name']))
         if not repo:
-            print(f"Подключение к репозиторию {repo_link['name']} - ОБОРВАЛОСЬ")
+            print(f"Подключение к репозиторию {repo_link['name']} - {colorama.Fore.RED}ОБОРВАЛОСЬ")
             continue
-        print(f"Подключение к репозиторию {repo.html_url} - УСПЕШНО")
+        print(f"Подключение к репозиторию {repo.html_url} - {colorama.Fore.GREEN}УСПЕШНО")
         for file in repo_link["files"]:
             name_output_file = file['output']
             code_from_file, correct_file = get_code_from_file(file["output"])
             if correct_file:
-                print(f"Файл {name_output_file} считался УСПЕШНО")
+                print(f"Файл {name_output_file} считался {colorama.Fore.GREEN}УСПЕШНО")
             else:
-                print(f"Файл {name_output_file} считался НЕ УСПЕШНО")
+                print(f"Файл {name_output_file} считался {colorama.Fore.RED}НЕ УСПЕШНО")
                 continue
             name_input_file = file['input']
-            content_file = connecting_to_file(repo, name_input_file)
-            if content_file:
-                text_for_push = content_file.decoded_content.decode() + code_from_file
-                commit_for_push = f"update file {name_input_file}"
-                file_sha = content_file.sha
-                repo.update_file(path=name_input_file, message=commit_for_push, content=text_for_push, sha=file_sha)
-            else:
-                text_for_push = code_from_file
-                commit_for_push = f"create file {name_input_file}"
-                repo.create_file(path=name_input_file, message=commit_for_push, content=text_for_push)
+            push_in_repo(repo, name_input_file, code_from_file)
     return True
 
 
