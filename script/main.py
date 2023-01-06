@@ -12,6 +12,7 @@ PATH_FOLDER_ACCOUNTS = "./account/"
 PATH_FOLDER_CODE_STORAGE = "./code"
 colorama.init(autoreset=True)
 
+
 def get_list_files_accounts():
     return list(map(lambda x: PATH_FOLDER_ACCOUNTS + x, [file for file in os.listdir(PATH_FOLDER_ACCOUNTS)]))
 
@@ -42,7 +43,6 @@ def get_repo_name_from_link(link):
     parts = link.split('/')
     username = parts[-2]
     repo_name = parts[-1]
-
     return f"{username}/{repo_name}"
 
 
@@ -70,16 +70,17 @@ def connecting_to_account(token):
         return None
 
 
-def connecting_to_repo(acc, link):
+def connecting_to_repo(acc, repo_name):
     try:
-        return acc.get_repo(get_repo_name_from_link(link))
+        return acc.get_repo(repo_name)
     except UnknownObjectException:
         return None
 
 
 def connecting_to_file(repo, file_path):
     try:
-        return repo.get_contents(file_path)
+        content = repo.get_contents(file_path)
+        return content
     except UnknownObjectException:
         return None
 
@@ -87,7 +88,7 @@ def connecting_to_file(repo, file_path):
 def push_in_repo(repo, file, code_from_file):
     content_file = connecting_to_file(repo, file)
     if content_file:
-        text_for_push = content_file.decoded_content.decode() + code_from_file
+        text_for_push = content_file.decoded_content.decode('utf-8') + code_from_file
         commit_for_push = f"update file {file}"
         file_sha = content_file.sha
         repo.update_file(path=file, message=commit_for_push, content=text_for_push, sha=file_sha)
@@ -100,14 +101,16 @@ def push_in_repo(repo, file, code_from_file):
 
 
 def preparing_for_a_commit(acc_dict: Dict):
-    acc = connecting_to_account(acc_dict['token'])
-    if not acc:
+    git = connecting_to_account(acc_dict['token'])
+    name_acc = git.get_user().login
+    print(name_acc)
+    if not git:
         return False
     for repo_link in acc_dict['repos']:
-        repo = acc.get_repo(get_repo_name_from_link(repo_link['name']))
+        # repo = acc.get_repo(f"{name_acc}/{repo_link['name']}")
+        repo = connecting_to_repo(git, repo_link['name'])
         if not repo:
-            print(f"Подключение к репозиторию {repo_link['name']} - {colorama.Fore.RED}ОБОРВАЛОСЬ")
-            continue
+            repo = git.get_user().create_repo(repo_link['name'])
         print(f"Подключение к репозиторию {repo.html_url} - {colorama.Fore.GREEN}УСПЕШНО")
         for file in repo_link["files"]:
             name_output_file = file['output']
