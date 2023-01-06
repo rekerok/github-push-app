@@ -5,12 +5,14 @@ from typing import Any, Dict
 import colorama
 import github
 from github import BadCredentialsException
+from github import GithubException
 from github import UnknownObjectException
 
 PATH_PRIVATE_TOKENS = "./private_token.txt"
 PATH_FOLDER_ACCOUNTS = "./account/"
 PATH_FOLDER_CODE_STORAGE = "./code"
 colorama.init(autoreset=True)
+
 
 def get_list_files_accounts():
     return list(map(lambda x: PATH_FOLDER_ACCOUNTS + x, [file for file in os.listdir(PATH_FOLDER_ACCOUNTS)]))
@@ -80,7 +82,7 @@ def connecting_to_repo(acc, link):
 def connecting_to_file(repo, file_path):
     try:
         return repo.get_contents(file_path)
-    except UnknownObjectException:
+    except (UnknownObjectException, GithubException):
         return None
 
 
