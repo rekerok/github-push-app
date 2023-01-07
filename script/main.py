@@ -73,7 +73,8 @@ def connecting_to_account(token):
 
 def connecting_to_repo(acc, repo_name):
     try:
-        print([repo.name for repo in acc.get_repos()])
+        repo = acc.get_repo(repo_name)
+        return repo
     except UnknownObjectException:
         return None
 
