@@ -73,7 +73,7 @@ def connecting_to_account(token):
 
 def connecting_to_repo(acc, repo_name):
     try:
-        return acc.get_repo(repo_name)
+        print([repo.name for repo in acc.get_repos()])
     except UnknownObjectException:
         return None
 
@@ -82,7 +82,6 @@ def connecting_to_file(repo, file_path):
     try:
         return repo.get_contents(file_path)
     except (UnknownObjectException, GithubException):
-
         return None
 
 
@@ -103,14 +102,16 @@ def push_in_repo(repo, file, code_from_file):
 
 def preparing_for_a_commit(acc_dict: Dict):
     git = connecting_to_account(acc_dict['token'])
-    name_acc = git.get_user().login
-    print(name_acc)
+    acc = git.get_user()
+    print(acc)
     if not git:
         return False
     for repo_link in acc_dict['repos']:
-        repo = git.get_repo(f"{name_acc}/{repo_link['name']}")
+        repo = connecting_to_repo(acc, repo_link['name'])
+        # repo = git.get_repo(f"{name_acc}/{repo_link['name']}")
         if not repo:
-            repo = git.get_user().create_repo(repo_link['name'])
+            repo = acc.create_repo(repo_link['name'])
+            repo.create_file("README.md", "Initial commit", f"#{repo_link['name']}", branch=repo.default_branch)
         print(f"Подключение к репозиторию {repo.html_url} - {colorama.Fore.GREEN}УСПЕШНО")
         for file in repo_link["files"]:
             name_output_file = file['output']
