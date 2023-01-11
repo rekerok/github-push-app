@@ -10,7 +10,7 @@ from github import UnknownObjectException
 
 PATH_PRIVATE_TOKENS = "./private_token.txt"
 PATH_FOLDER_ACCOUNTS = "./account/"
-PATH_FOLDER_CODE_STORAGE = "./code"
+PATH_FOLDER_CODE_STORAGE = "./code/"
 colorama.init(autoreset=True)
 
 
@@ -65,10 +65,14 @@ def check_exist_file_in_repo(files_in_repo, check_file):
 
 
 def connecting_to_account(token):
+    git = github.Github(token)
     try:
-        return github.Github(token)
+        acc = git.get_user()
+        print(acc.login)
+        return git, acc
     except BadCredentialsException:
-        return None
+        print(f"ОШИБКА подключения по токену {token}")
+        return None, None
 
 
 def connecting_to_repo(acc, repo_name):
@@ -102,14 +106,11 @@ def push_in_repo(repo, file, code_from_file):
 
 
 def preparing_for_a_commit(acc_dict: Dict):
-    git = connecting_to_account(acc_dict['token'])
-    acc = git.get_user()
-    print(acc)
-    if not git:
+    git, acc = connecting_to_account(acc_dict['token'])
+    if not acc:
         return False
     for repo_link in acc_dict['repos']:
         repo = connecting_to_repo(acc, repo_link['name'])
-        # repo = git.get_repo(f"{name_acc}/{repo_link['name']}")
         if not repo:
             repo = acc.create_repo(repo_link['name'])
             repo.create_file("README.md", "Initial commit", f"#{repo_link['name']}", branch=repo.default_branch)
