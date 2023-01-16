@@ -3,6 +3,7 @@
 .DS_Store
 /env
 private_token.txt
-/code
+/resources
 /account
 /profiles
+__pycache__/
