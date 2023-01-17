@@ -1,5 +1,6 @@
 import json
 import os
+import random
 from typing import Any, Dict
 
 import colorama
@@ -8,14 +9,14 @@ from github import BadCredentialsException
 from github import GithubException
 from github import UnknownObjectException
 
-PATH_PRIVATE_TOKENS = "./private_token.txt"
-PATH_FOLDER_ACCOUNTS = "./account/"
-PATH_FOLDER_CODE_STORAGE = "./code/"
+import config
+
 colorama.init(autoreset=True)
 
 
 def get_list_files_accounts():
-    return list(map(lambda x: PATH_FOLDER_ACCOUNTS + x, [file for file in os.listdir(PATH_FOLDER_ACCOUNTS)]))
+    return list(
+        map(lambda x: config.PATH_ACTIVE_ACCOUNTS + x, [file for file in os.listdir(config.PATH_ACTIVE_ACCOUNTS)]))
 
 
 def parse_json_accounts(files) -> list[Any]:
@@ -25,12 +26,6 @@ def parse_json_accounts(files) -> list[Any]:
             data = json.load(file)
             list_accounts.append(data)
     return list_accounts
-
-
-def read_file_private_token():
-    with open(PATH_PRIVATE_TOKENS, "r") as file:
-        lines = list(map(lambda x: x.replace("\n", ''), file.readlines()))
-    return lines
 
 
 def info_acc(token):
@@ -47,21 +42,10 @@ def get_repo_name_from_link(link):
     return f"{username}/{repo_name}"
 
 
-def get_code_from_file(file_name):
-    full_path = f"{PATH_FOLDER_CODE_STORAGE}/{file_name}"
-    try:
-        with open(full_path, "r") as file_name:
-            code = file_name.read()
-    except FileNotFoundError:
-        return None, False
-    return code, True
-
-
-def check_exist_file_in_repo(files_in_repo, check_file):
-    if check_file in [file.name for file in files_in_repo if file.type == 'file']:
-        return True
-    else:
-        return False
+def get_code_from_file(path_to_file):
+    with open(path_to_file, "r") as file_name:
+        code = file_name.read()
+    return code
 
 
 def connecting_to_account(token):
@@ -105,8 +89,43 @@ def push_in_repo(repo, file, code_from_file):
         print(f"Файл {file} создался и запушился {colorama.Fore.GREEN}УСПЕШНО")
 
 
+def select_random_file(type):
+    return random.choice(os.listdir(config.PATH_CODE_STORAGE_RANDOM + type))
+
+
+def parse_lines(lines):
+    range_linas = list(map(lambda x: int(x), lines.split('-')))
+    if len(range_linas) == 2:
+        min_lines, max_lines = range_linas
+        return random.randint(min_lines, max_lines)
+    else:
+        return range_linas[0]
+
+
+def random_part_string(code, count_lines):
+    parts_code = code.splitlines(keepends=True)
+    if len(parts_code) < count_lines:
+        return code
+    else:
+        start = random.randint(0, len(parts_code) - count_lines)
+        return "".join(parts_code[start:start + count_lines])
+
+
+def select_random_code(type_folder, count_lines):
+    if os.path.isdir(os.path.join(config.PATH_CODE_STORAGE_RANDOM + type_folder)):
+        lines = parse_lines(count_lines)
+        code_from_file = get_code_from_file(
+            os.path.join(config.PATH_CODE_STORAGE_RANDOM, type_folder,
+                         select_random_file(type_folder)))
+        code = random_part_string(code_from_file, lines)
+        return code
+    else:
+        return None
+
+
 def preparing_for_a_commit(acc_dict: Dict):
-    git, acc = connecting_to_account(acc_dict['token'])
+    token = acc_dict['token']
+    git, acc = connecting_to_account(token)
     if not acc:
         return False
     for repo_link in acc_dict['repos']:
@@ -116,15 +135,23 @@ def preparing_for_a_commit(acc_dict: Dict):
             repo.create_file("README.md", "Initial commit", f"#{repo_link['name']}", branch=repo.default_branch)
         print(f"Подключение к репозиторию {repo.html_url} - {colorama.Fore.GREEN}УСПЕШНО")
         for file in repo_link["files"]:
-            name_output_file = file['output']
-            code_from_file, correct_file = get_code_from_file(file["output"])
-            if correct_file:
-                print(f"Файл {name_output_file} считался {colorama.Fore.GREEN}УСПЕШНО")
+            if file['random']:
+                code_for_push = select_random_code(file['folder'], file['lines'])
+                if code_for_push:
+                    print(
+                        f"Случайный код из файла тип {colorama.Back.BLUE}{file['folder'][:-1]}{colorama.Style.RESET_ALL} считался {colorama.Fore.GREEN}УСПЕШНО")
+                else:
+                    print(f"Папки с файлами типа {file['folder']}{colorama.Fore.RED} НЕ СУЩЕСТВУЕТ")
+                    continue
             else:
-                print(f"Файл {name_output_file} считался {colorama.Fore.RED}НЕ УСПЕШНО")
-                continue
-            name_input_file = file['input']
-            push_in_repo(repo, name_input_file, code_from_file)
+                path_to_file = os.path.join(config.PATH_CODE_STORAGE, file['output'])
+                if os.path.isfile(path_to_file):
+                    code_for_push = get_code_from_file(path_to_file)
+                    print(f"Файл {file['output']} считался {colorama.Fore.GREEN}УСПЕШНО")
+                else:
+                    print(f"Файл {file['output']} считался {colorama.Fore.RED}НЕУСПЕШНО")
+                    continue
+            push_in_repo(repo, file['input'], code_for_push)
     return True
 
 
@@ -133,6 +160,7 @@ def main():
     accounts_dict = parse_json_accounts(accounts_files)
     for acc_dict in accounts_dict:
         preparing_for_a_commit(acc_dict)
+        print('')
 
 
 if __name__ == "__main__":
