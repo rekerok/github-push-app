@@ -9,7 +9,7 @@ from github import BadCredentialsException
 from github import GithubException
 from github import UnknownObjectException
 
-import config
+import config, utils
 
 colorama.init(autoreset=True)
 
@@ -28,7 +28,7 @@ def parse_json_accounts(files) -> list[Any]:
     return list_accounts
 
 
-def info_acc(token):
+def print_info_account(token):
     acc = github.Github(token)
     user = acc.get_user()
     print(f"acc - {user.login}")
@@ -48,18 +48,18 @@ def get_code_from_file(path_to_file):
     return code
 
 
-def connecting_to_account(token):
+def connect_to_account(token):
     git = github.Github(token)
     try:
         acc = git.get_user()
         print(acc.login)
         return git, acc
     except BadCredentialsException:
-        print(f"ОШИБКА подключения по токену {token}")
+        utils.print_error_connecting_with_token(token)
         return None, None
 
 
-def connecting_to_repo(acc, repo_name):
+def connect_to_repo(acc, repo_name):
     try:
         repo = acc.get_repo(repo_name)
         return repo
@@ -67,26 +67,27 @@ def connecting_to_repo(acc, repo_name):
         return None
 
 
-def connecting_to_file(repo, file_path):
+def connect_to_file(repo, file_path):
     try:
         return repo.get_contents(file_path)
     except (UnknownObjectException, GithubException):
         return None
 
 
-def push_in_repo(repo, file, code_from_file):
-    content_file = connecting_to_file(repo, file)
+def push_in_repo(repo, file_to_push, code_to_push):
+    content_file = connect_to_file(repo, file_to_push)
     if content_file:
-        text_for_push = content_file.decoded_content.decode('utf-8') + code_from_file
-        commit_for_push = f"update file {file}"
+        text_for_push = content_file.decoded_content.decode('utf-8') + code_to_push
+        commit_for_push = f"update file {file_to_push}"
         file_sha = content_file.sha
-        repo.update_file(path=file, message=commit_for_push, content=text_for_push, sha=file_sha)
-        print(f"Файл {file} запушился {colorama.Fore.GREEN}УСПЕШНО")
+        repo.update_file(path=file_to_push, message=commit_for_push, content=text_for_push, sha=file_sha)
+        utils.print_successful_file_push_message(file_to_push)
     else:
-        text_for_push = code_from_file
-        commit_for_push = f"create file {file}"
-        repo.create_file(path=file, message=commit_for_push, content=text_for_push)
-        print(f"Файл {file} создался и запушился {colorama.Fore.GREEN}УСПЕШНО")
+        text_for_push = code_to_push
+        commit_for_push = f"create file {file_to_push}"
+        repo.create_file(path=file_to_push, message=commit_for_push, content=text_for_push)
+        utils.print_successful_file_creation_message(file_to_push)
+        utils.print_successful_file_push_message(file_to_push)
 
 
 def select_random_file(type):
@@ -125,31 +126,30 @@ def select_random_code(type_folder, count_lines):
 
 def preparing_for_a_commit(acc_dict: Dict):
     token = acc_dict['token']
-    git, acc = connecting_to_account(token)
+    git, acc = connect_to_account(token)
     if not acc:
         return False
     for repo_link in acc_dict['repos']:
-        repo = connecting_to_repo(acc, repo_link['name'])
+        repo = connect_to_repo(acc, repo_link['name'])
         if not repo:
             repo = acc.create_repo(repo_link['name'])
             repo.create_file("README.md", "Initial commit", f"#{repo_link['name']}", branch=repo.default_branch)
-        print(f"Подключение к репозиторию {repo.html_url} - {colorama.Fore.GREEN}УСПЕШНО")
+        utils.print_successful_connection_to_repo_message(repo)
         for file in repo_link["files"]:
             if file['random']:
                 code_for_push = select_random_code(file['folder'], file['lines'])
                 if code_for_push:
-                    print(
-                        f"Случайный код из файла тип {colorama.Back.BLUE}{file['folder'][:-1]}{colorama.Style.RESET_ALL} считался {colorama.Fore.GREEN}УСПЕШНО")
+                    utils.print_successful_read_of_random_code_from_file_message(file)
                 else:
-                    print(f"Папки с файлами типа {file['folder']}{colorama.Fore.RED} НЕ СУЩЕСТВУЕТ")
+                    utils.print_no_existence_of_folder_message(file)
                     continue
             else:
                 path_to_file = os.path.join(config.PATH_CODE_STORAGE, file['output'])
                 if os.path.isfile(path_to_file):
                     code_for_push = get_code_from_file(path_to_file)
-                    print(f"Файл {file['output']} считался {colorama.Fore.GREEN}УСПЕШНО")
+                    utils.print_read_of_file_result_message(file, True)
                 else:
-                    print(f"Файл {file['output']} считался {colorama.Fore.RED}НЕУСПЕШНО")
+                    utils.print_read_of_file_result_message(file, False)
                     continue
             push_in_repo(repo, file['input'], code_for_push)
     return True
